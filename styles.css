@@ -1029,6 +1029,31 @@ audio[data-audio-player] {
   line-height: 1.4;
 }
 
+.signature-edit {
+  display: block;
+  width: fit-content;
+  margin: 0;
+  padding: 0 4px;
+  color: var(--violet-dark);
+  font: inherit;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-align: left;
+  text-transform: uppercase;
+  background: transparent;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.signature-edit:hover,
+.signature-edit:focus-visible {
+  background: rgba(139, 91, 220, 0.1);
+}
+
+.name-dialog {
+  width: min(440px, calc(100vw - 28px));
+}
+
 .link-button {
   display: inline-flex;
   align-items: center;

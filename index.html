@@ -200,7 +200,17 @@
           </p>
           <hr />
           <p class="script-line signoff">yours, completely,</p>
-          <p class="signature">- your person</p>
+          <button
+            class="signature signature-edit"
+            type="button"
+            data-action="open-name-editor"
+            data-creator-only
+          >
+            - <span data-person-name>your person</span>
+          </button>
+          <p class="signature" data-shared-signature hidden>
+            - <span data-person-name>your person</span>
+          </p>
         </article>
         <div class="final-actions">
           <button class="ghost-button" type="button" data-action="restart">Read it again</button>
@@ -298,6 +308,25 @@
           <button class="ghost-button" type="button" data-action="find-lyrics">Find synced lyrics</button>
           <button class="ghost-button" type="button" data-action="reset-song">Reset</button>
           <button class="primary-small" type="button" data-action="save-song">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="photo-dialog name-dialog" id="nameDialog" aria-labelledby="nameDialogTitle">
+      <form method="dialog">
+        <div class="dialog-head">
+          <h2 id="nameDialogTitle">Your Name</h2>
+          <button class="icon-only" type="submit" value="cancel" title="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <label class="field">
+          <span>Signature name</span>
+          <input id="personNameInput" type="text" maxlength="36" placeholder="your person" />
+        </label>
+        <div class="dialog-actions">
+          <button class="ghost-button" type="button" data-action="reset-name">Reset</button>
+          <button class="primary-small" type="button" data-action="save-name">Save</button>
         </div>
       </form>
     </dialog>

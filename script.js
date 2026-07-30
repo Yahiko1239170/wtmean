@@ -12,6 +12,8 @@ const DEFAULT_CAPTIONS = {
   letter: "a little note for the person I adore."
 };
 
+const DEFAULT_PERSON_NAME = "your person";
+
 const DEFAULT_SONG = {
   title: "Our Song",
   artist: "",
@@ -36,6 +38,7 @@ const intro = document.querySelector("#intro");
 const storySections = [...document.querySelectorAll("[data-section]")];
 const photoDialog = document.querySelector("#photoDialog");
 const songDialog = document.querySelector("#songDialog");
+const nameDialog = document.querySelector("#nameDialog");
 const shareDialog = document.querySelector("#shareDialog");
 const dialogTitle = document.querySelector("#dialogTitle");
 const dialogPhoto = document.querySelector("[data-dialog-photo]");
@@ -62,6 +65,9 @@ const timestampOutput = document.querySelector("#timestampOutput");
 const lyricLineInput = document.querySelector("#lyricLineInput");
 const lyricsInput = document.querySelector("#lyricsInput");
 const lyricsStatus = document.querySelector("#lyricsStatus");
+const personNameInput = document.querySelector("#personNameInput");
+const personNameTargets = [...document.querySelectorAll("[data-person-name]")];
+const sharedSignature = document.querySelector("[data-shared-signature]");
 const shareLink = document.querySelector("#shareLink");
 const openShareLink = document.querySelector("#openShareLink");
 const shareNote = document.querySelector("[data-share-note]");
@@ -90,6 +96,19 @@ function storageKey(key, field) {
 
 function songStorageKey(field) {
   return storageKey("song", field);
+}
+
+function getPersonName() {
+  return localStorage.getItem(storageKey("person", "name")) || DEFAULT_PERSON_NAME;
+}
+
+function savePersonName(value) {
+  const name = String(value || "").trim();
+  if (name) {
+    localStorage.setItem(storageKey("person", "name"), name);
+  } else {
+    localStorage.removeItem(storageKey("person", "name"));
+  }
 }
 
 function getCaption(key) {
@@ -419,6 +438,13 @@ function renderPhotos() {
   renderAlbum();
 }
 
+function renderPersonName() {
+  const name = getPersonName();
+  personNameTargets.forEach((target) => {
+    target.textContent = name;
+  });
+}
+
 function renderAlbum() {
   const key = ALBUM_KEYS[albumIndex];
   applyPhoto(albumPhoto, key);
@@ -487,6 +513,24 @@ function resetPhoto() {
   captionInput.value = DEFAULT_CAPTIONS[currentPhotoKey] || "";
   renderPhotos();
   applyPhoto(dialogPhoto, currentPhotoKey);
+}
+
+function openNameEditor() {
+  if (sharedView) return;
+  personNameInput.value = getPersonName();
+  nameDialog.showModal();
+}
+
+function saveName() {
+  savePersonName(personNameInput.value);
+  renderPersonName();
+  nameDialog.close();
+}
+
+function resetName() {
+  localStorage.removeItem(storageKey("person", "name"));
+  personNameInput.value = DEFAULT_PERSON_NAME;
+  renderPersonName();
 }
 
 function openSongEditor() {
@@ -764,6 +808,7 @@ function collectSharePayload() {
     v: 1,
     captions,
     images,
+    personName: getPersonName(),
     song
   };
 }
@@ -818,13 +863,16 @@ function applySharePayload(payload) {
     });
   }
 
+  savePersonName(payload.personName || DEFAULT_PERSON_NAME);
+
   return true;
 }
 
 function enterSharedMode() {
   sharedView = true;
   document.body.classList.add("shared-view");
-  [photoDialog, songDialog, shareDialog].forEach((dialog) => {
+  sharedSignature.hidden = false;
+  [photoDialog, songDialog, nameDialog, shareDialog].forEach((dialog) => {
     if (dialog.open) dialog.close();
   });
   stopSong();
@@ -895,6 +943,7 @@ document.addEventListener("click", (event) => {
   if (action === "restart") restartStory();
   if (action === "open-first-photo") openPhotoEditor("us");
   if (action === "open-song-editor") openSongEditor();
+  if (action === "open-name-editor") openNameEditor();
   if (action === "previous") {
     albumIndex = (albumIndex + ALBUM_KEYS.length - 1) % ALBUM_KEYS.length;
     renderAlbum();
@@ -908,6 +957,8 @@ document.addEventListener("click", (event) => {
   if (action === "reset-photo") resetPhoto();
   if (action === "save-song") saveSong();
   if (action === "reset-song") resetSong();
+  if (action === "save-name") saveName();
+  if (action === "reset-name") resetName();
   if (action === "find-lyrics") findSyncedLyrics();
   if (action === "add-lyric-line") addLyricLine();
   if (action === "use-current-time") {
@@ -978,5 +1029,6 @@ window.addEventListener("hashchange", loadSharedPage);
 
 loadSharedPage();
 renderPhotos();
+renderPersonName();
 renderSong();
 primeYouTubePlayer();
