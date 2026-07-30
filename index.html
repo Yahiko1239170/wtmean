@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Girlfriend's Day Letter</title>
+    <meta
+      name="description"
+      content="A soft interactive Girlfriend's Day love letter with editable memories."
+    />
+    <link rel="preload" href="assets/sticker-sheet.png" as="image" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="petal-field" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+    <header class="topbar">
+      <button class="icon-button" type="button" data-action="restart" title="Restart">
+        <span aria-hidden="true">&larr;</span>
+        <span>Restart</span>
+      </button>
+      <p>For the one I adore</p>
+      <button class="primary-small" type="button" data-action="open-first-photo" data-creator-only>
+        Customize
+      </button>
+    </header>
+
+    <main class="story-shell" id="story">
+      <section class="intro-screen is-active" id="intro" aria-label="Opening card">
+        <div class="floating-note">For the girl I adore</div>
+        <div class="envelope-scene">
+          <div class="envelope-flap"></div>
+          <article class="intro-letter">
+            <span class="tiny-heart" aria-hidden="true">&hearts;</span>
+            <h1>A little world, made for you</h1>
+            <p class="script-line">happy girlfriend's day, my love</p>
+            <p class="mini-sign">yours, always</p>
+          </article>
+          <div class="envelope-pocket">
+            <span>L</span>
+          </div>
+        </div>
+        <button class="start-button" type="button" data-action="begin">
+          Tap anywhere to begin
+        </button>
+      </section>
+
+      <section class="story-section hero-section" data-section="home">
+        <div class="section-inner">
+          <div class="round-sticker editable-photo" data-photo-key="letter"></div>
+          <p class="eyebrow">&hearts; for my favourite person &hearts;</p>
+          <h2>Happy Girlfriend's Day</h2>
+          <p class="script-line">for you, always &hearts;</p>
+          <p class="hero-copy">
+            Today is about you. I made this tiny corner of the internet to say
+            what I do not say enough: you make ordinary days feel like the good
+            kind of story. Stay a while, my love.
+          </p>
+
+          <article class="song-player">
+            <div class="song-art editable-photo" data-photo-key="us"></div>
+            <div class="song-meta">
+              <strong data-song-title>Our Song</strong>
+              <span data-song-subtitle>A track that is just us</span>
+              <div class="song-progress" aria-hidden="true">
+                <i></i>
+              </div>
+              <div class="song-times">
+                <span data-song-current>0:00</span>
+                <span data-song-duration>0:29</span>
+              </div>
+              <p class="lyric-line" data-song-lyric>You are my favourite line.</p>
+              <button class="song-edit-button" type="button" data-action="open-song-editor" data-creator-only>
+                Edit song
+              </button>
+            </div>
+            <button class="play-button" type="button" data-action="play" title="Play song">
+              <span aria-hidden="true">&#9654;</span>
+            </button>
+          </article>
+          <audio data-audio-player preload="metadata"></audio>
+          <div class="hidden-youtube-player" data-youtube-player></div>
+
+          <div class="mini-gallery" aria-label="Editable photo preview">
+            <button class="polaroid editable-photo" type="button" data-photo-key="us">
+              <span data-caption-for="us"></span>
+            </button>
+            <button class="polaroid editable-photo" type="button" data-photo-key="flower">
+              <span data-caption-for="flower"></span>
+            </button>
+            <button class="polaroid editable-photo" type="button" data-photo-key="rose">
+              <span data-caption-for="rose"></span>
+            </button>
+          </div>
+
+          <button class="big-button" type="button" data-next="album">
+            See our little album <span aria-hidden="true">&rarr;</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="story-section album-section" data-section="album" hidden>
+        <div class="section-inner">
+          <p class="script-line small-script">memories picked just for you &hearts;</p>
+          <div class="carousel">
+            <button class="round-button" type="button" data-action="previous" title="Previous">
+              <span aria-hidden="true">&larr;</span>
+            </button>
+            <article class="album-card">
+              <button class="album-photo editable-photo" type="button" data-album-photo></button>
+              <p class="counter" data-album-counter>01 / 03</p>
+              <p class="script-line album-caption" data-album-caption></p>
+            </article>
+            <button class="round-button" type="button" data-action="next" title="Next">
+              <span aria-hidden="true">&rarr;</span>
+            </button>
+          </div>
+
+          <div class="thumb-row">
+            <button class="thumb editable-photo" type="button" data-photo-key="us" data-thumb="0"></button>
+            <button class="thumb editable-photo" type="button" data-photo-key="flower" data-thumb="1"></button>
+            <button class="thumb editable-photo" type="button" data-photo-key="rose" data-thumb="2"></button>
+          </div>
+
+          <button class="big-button" type="button" data-next="reasons">
+            Why I adore you <span aria-hidden="true">&rarr;</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="story-section reasons-section" data-section="reasons" hidden>
+        <div class="section-inner">
+          <p class="script-line small-script">a few little reasons</p>
+          <div class="reason-grid">
+            <article>
+              <span class="reason-flower"></span>
+              <p>You feel like home.</p>
+            </article>
+            <article>
+              <span class="reason-flower"></span>
+              <p>Your laugh is my favourite sound.</p>
+            </article>
+            <article>
+              <span class="reason-flower"></span>
+              <p>You make ordinary days magic.</p>
+            </article>
+            <article>
+              <span class="reason-flower"></span>
+              <p>You are my calm and my spark.</p>
+            </article>
+            <article>
+              <span class="reason-flower"></span>
+              <p>You make me want to be better.</p>
+            </article>
+            <article>
+              <span class="reason-flower"></span>
+              <p>It is you. It is always you.</p>
+            </article>
+          </div>
+          <button class="big-button" type="button" data-next="letter">
+            Read my letter <span aria-hidden="true">&rarr;</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="story-section letter-section" data-section="letter" hidden>
+        <article class="letter-paper">
+          <button class="round-sticker editable-photo" type="button" data-photo-key="letter"></button>
+          <p class="eyebrow">&hearts; a letter, just for you &hearts;</p>
+          <h2 class="script-line">My darling,</h2>
+          <hr />
+          <p>
+            I am better with actions than with words, so I made you a little
+            page instead: a song, our pictures, and a few things I mean with my
+            whole heart.
+          </p>
+          <div class="letter-photos">
+            <button class="tiny-polaroid editable-photo" type="button" data-photo-key="flower"></button>
+            <button class="tiny-polaroid editable-photo" type="button" data-photo-key="rose"></button>
+            <button class="tiny-polaroid editable-photo" type="button" data-photo-key="letter"></button>
+          </div>
+          <p>
+            Thank you for being the calm in my chaos and the spark in my
+            ordinary. For the late-night talks, the terrible jokes, and the way
+            you somehow know when I need a hug before I do.
+          </p>
+          <p>
+            I hope today feels soft, warm, and completely yours. I hope you
+            feel even a fraction of how much you are adored. I choose you,
+            every single time.
+          </p>
+          <hr />
+          <p class="script-line signoff">yours, completely,</p>
+          <p class="signature">- your person</p>
+        </article>
+        <div class="final-actions">
+          <button class="ghost-button" type="button" data-action="restart">Read it again</button>
+          <button class="big-button" type="button" data-action="finish" data-creator-only>
+            Done
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <dialog class="photo-dialog" id="photoDialog" aria-labelledby="dialogTitle">
+      <form method="dialog">
+        <div class="dialog-head">
+          <h2 id="dialogTitle">Memory</h2>
+          <button class="icon-only" type="submit" value="cancel" title="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="dialog-photo editable-photo" data-dialog-photo></div>
+        <label class="field">
+          <span>Caption</span>
+          <textarea id="captionInput" rows="3" maxlength="120"></textarea>
+        </label>
+        <label class="file-field">
+          <input id="imageInput" type="file" accept="image/*" />
+          <span>Replace image</span>
+        </label>
+        <div class="dialog-actions">
+          <button class="ghost-button" type="button" data-action="reset-photo">Reset</button>
+          <button class="primary-small" type="button" data-action="save-photo">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="photo-dialog settings-dialog" id="songDialog" aria-labelledby="songDialogTitle">
+      <form method="dialog">
+        <div class="dialog-head">
+          <h2 id="songDialogTitle">Song</h2>
+          <button class="icon-only" type="submit" value="cancel" title="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <label class="field">
+          <span>Song title</span>
+          <input id="songTitleInput" type="text" maxlength="42" />
+        </label>
+        <label class="field">
+          <span>Artist</span>
+          <input id="artistInput" type="text" maxlength="52" />
+        </label>
+        <label class="field">
+          <span>YouTube link</span>
+          <input id="youtubeInput" type="url" placeholder="https://youtu.be/..." />
+        </label>
+        <div class="time-range-grid">
+          <label class="field">
+            <span>Start time</span>
+            <input id="songStartInput" type="text" inputmode="numeric" placeholder="0:00" />
+          </label>
+          <label class="field">
+            <span>End time</span>
+            <input id="songEndInput" type="text" inputmode="numeric" placeholder="0:29" />
+          </label>
+        </div>
+        <label class="file-field full-file-field">
+          <input id="audioInput" type="file" accept="audio/*" />
+          <span>Upload song</span>
+        </label>
+        <label class="field">
+          <span>Duration</span>
+          <input id="songDurationInput" type="range" min="1" max="300" step="1" />
+          <output id="durationOutput">0:29</output>
+        </label>
+        <div class="timestamp-tools">
+          <label class="field">
+            <span>Timestamp</span>
+            <input id="timestampInput" type="range" min="0" max="300" step="1" />
+            <output id="timestampOutput">0:00</output>
+          </label>
+          <label class="field">
+            <span>Lyric line</span>
+            <input id="lyricLineInput" type="text" maxlength="120" />
+          </label>
+          <div class="mini-actions">
+            <button class="ghost-button" type="button" data-action="use-current-time">Use current time</button>
+            <button class="ghost-button" type="button" data-action="add-lyric-line">Add line</button>
+          </div>
+        </div>
+        <label class="field">
+          <span>Lyrics</span>
+          <textarea id="lyricsInput" rows="6" maxlength="420"></textarea>
+        </label>
+        <p class="share-note" id="lyricsStatus"></p>
+        <div class="dialog-actions">
+          <button class="ghost-button" type="button" data-action="find-lyrics">Find synced lyrics</button>
+          <button class="ghost-button" type="button" data-action="reset-song">Reset</button>
+          <button class="primary-small" type="button" data-action="save-song">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="photo-dialog share-dialog" id="shareDialog" aria-labelledby="shareDialogTitle">
+      <form method="dialog">
+        <div class="dialog-head">
+          <h2 id="shareDialogTitle">Done</h2>
+          <button class="icon-only" type="submit" value="cancel" title="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <label class="field">
+          <span>Share link</span>
+          <textarea id="shareLink" rows="4" readonly></textarea>
+        </label>
+        <p class="share-note" data-share-note></p>
+        <div class="dialog-actions">
+          <a class="ghost-button link-button" id="openShareLink" target="_blank" rel="noreferrer">Open</a>
+          <button class="primary-small" type="button" data-action="copy-link">Copy</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="script.js"></script>
+  </body>
+</html>
