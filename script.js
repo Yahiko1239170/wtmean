@@ -33,6 +33,9 @@ const STORAGE_PREFIX = "girlfriend-story:";
 const SHARE_AUDIO_LIMIT = 650000;
 const UPLOAD_AUDIO_LIMIT = 3200000;
 const YOUTUBE_FRAME_ID = "youtubePlayerFrame";
+const SUPABASE_URL = "https://dalhvmruyivqnhdhtrbl.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_m7CSxrXeLoZOKZyxeMV3OQ_49ue442V";
+const SUPABASE_BUCKET = "girlfriend-pages";
 
 const intro = document.querySelector("#intro");
 const storySections = [...document.querySelectorAll("[data-section]")];
@@ -89,6 +92,7 @@ let ytPlayerKey = "";
 let ytPlayerReady = false;
 let pendingYoutubePlay = false;
 let ytApiReadyPromise = null;
+let supabaseClient = null;
 
 function storageKey(key, field) {
   return `${STORAGE_PREFIX}${key}:${field}`;
@@ -96,6 +100,75 @@ function storageKey(key, field) {
 
 function songStorageKey(field) {
   return storageKey("song", field);
+}
+
+function isRemoteUrl(value) {
+  return /^https?:\/\//i.test(String(value || ""));
+}
+
+function isDataUrl(value) {
+  return /^data:[^;]+;base64,/i.test(String(value || ""));
+}
+
+function isSupabaseConfigured() {
+  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase?.createClient);
+}
+
+function getSupabaseClient() {
+  if (!isSupabaseConfigured()) return null;
+  if (!supabaseClient) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+  return supabaseClient;
+}
+
+function extensionFromMime(mimeType) {
+  const clean = String(mimeType || "").split(";")[0].toLowerCase();
+  if (clean === "image/jpeg") return "jpg";
+  if (clean === "image/png") return "png";
+  if (clean === "image/webp") return "webp";
+  if (clean === "audio/mpeg") return "mp3";
+  if (clean === "audio/mp4") return "m4a";
+  if (clean === "audio/wav") return "wav";
+  if (clean === "audio/ogg") return "ogg";
+  return clean.split("/")[1] || "bin";
+}
+
+function dataUrlToBlob(dataUrl) {
+  const match = String(dataUrl || "").match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) return null;
+  const bytes = atob(match[2]);
+  const array = new Uint8Array(bytes.length);
+  for (let index = 0; index < bytes.length; index += 1) {
+    array[index] = bytes.charCodeAt(index);
+  }
+  return new Blob([array], { type: match[1] });
+}
+
+function randomPath(prefix, mimeType) {
+  const random = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+  return `${prefix}/${random}.${extensionFromMime(mimeType)}`;
+}
+
+async function uploadDataUrlToSupabase(dataUrl, prefix) {
+  if (!isDataUrl(dataUrl)) return dataUrl;
+  const client = getSupabaseClient();
+  if (!client) return dataUrl;
+
+  const blob = dataUrlToBlob(dataUrl);
+  if (!blob) return dataUrl;
+
+  const path = randomPath(prefix, blob.type);
+  const { error } = await client.storage.from(SUPABASE_BUCKET).upload(path, blob, {
+    cacheControl: "31536000",
+    contentType: blob.type,
+    upsert: false
+  });
+
+  if (error) throw error;
+
+  const { data } = client.storage.from(SUPABASE_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
 }
 
 function getPersonName() {
@@ -378,7 +451,7 @@ function activeLyric(song = getSong()) {
   const timed = parseTimedLyrics(song.lyrics);
   if (timed.length) {
     const current = timed.filter((line) => line.time <= elapsed).pop();
-    return current?.lyric || "";
+    return current?.lyric || timed[0].lyric || "";
   }
 
   const lines = plainLyricLines(song);
@@ -402,7 +475,7 @@ function renderSong() {
 
 function syncSongEditorLimits(duration) {
   const max = Math.max(1, Math.round(duration || DEFAULT_SONG.duration));
-  songDurationInput.max = String(Math.max(300, max));
+  songDurationInput.max = String(Math.max(900, max));
   songDurationInput.value = String(max);
   timestampInput.max = String(max);
   timestampInput.value = String(Math.min(Number(timestampInput.value) || 0, max));
@@ -489,7 +562,7 @@ function openPhotoEditor(key) {
   photoDialog.showModal();
 }
 
-function savePhoto() {
+async function savePhoto() {
   const caption = captionInput.value.trim();
   if (caption) {
     localStorage.setItem(storageKey(currentPhotoKey, "caption"), caption);
@@ -498,7 +571,14 @@ function savePhoto() {
   }
 
   if (pendingImage) {
-    localStorage.setItem(storageKey(currentPhotoKey, "image"), pendingImage);
+    try {
+      localStorage.setItem(
+        storageKey(currentPhotoKey, "image"),
+        await uploadDataUrlToSupabase(pendingImage, "images")
+      );
+    } catch {
+      localStorage.setItem(storageKey(currentPhotoKey, "image"), pendingImage);
+    }
   }
 
   renderPhotos();
@@ -607,6 +687,25 @@ function addLyricLine() {
   lyricsInput.value = lines.map((line) => `${formatLrcTime(line.time)} ${line.lyric}`).join("\n");
   lyricLineInput.value = "";
   lyricsStatus.textContent = `Added at ${formatTime(time)}.`;
+}
+
+function syncTimestampToPlayback() {
+  const song = getSong();
+  let currentElapsed = elapsed;
+
+  if (song.audio && !audioPlayer.paused) {
+    currentElapsed = Math.max(0, Math.min(song.duration, audioPlayer.currentTime - song.start));
+    elapsed = currentElapsed;
+  } else if (song.youtube && !song.audio) {
+    const youtubeElapsed = getYouTubeElapsed(song);
+    if (youtubeElapsed !== null) {
+      currentElapsed = youtubeElapsed;
+      elapsed = youtubeElapsed;
+    }
+  }
+
+  timestampInput.value = String(Math.round(currentElapsed));
+  timestampOutput.textContent = formatTime(currentElapsed);
 }
 
 async function findSyncedLyrics() {
@@ -771,14 +870,16 @@ function readAudioFile(file) {
         syncSongEditorLimits(duration);
         songStartInput.value = "0:00";
         songEndInput.value = formatTime(duration);
+        youtubeInput.value = "";
         if (!songTitleInput.value.trim() || songTitleInput.value === DEFAULT_SONG.title) {
           songTitleInput.value = file.name.replace(/\.[^.]+$/, "").slice(0, 42);
         }
-        lyricsStatus.textContent = `Audio uploaded. Duration set to ${formatTime(duration)}.`;
+        lyricsStatus.textContent = `Audio uploaded. Duration set to ${formatTime(duration)}. Add or paste lyrics, then save.`;
         resolve(audioData);
       });
       probe.addEventListener("error", () => {
-        lyricsStatus.textContent = "Audio uploaded, but duration could not be read.";
+        youtubeInput.value = "";
+        lyricsStatus.textContent = "Audio uploaded, but duration could not be read. Add lyrics, then save.";
         resolve(audioData);
       });
       probe.src = audioData;
@@ -813,6 +914,28 @@ function collectSharePayload() {
   };
 }
 
+async function uploadStoredMediaForSharing() {
+  if (!isSupabaseConfigured()) return false;
+
+  for (const key of PHOTO_KEYS) {
+    const imageKey = storageKey(key, "image");
+    const image = localStorage.getItem(imageKey);
+    if (isDataUrl(image)) {
+      localStorage.setItem(imageKey, await uploadDataUrlToSupabase(image, "images"));
+    }
+  }
+
+  const song = getSong();
+  if (isDataUrl(song.audio)) {
+    saveSongData({
+      ...song,
+      audio: await uploadDataUrlToSupabase(song.audio, "audio")
+    });
+  }
+
+  return true;
+}
+
 function toBase64Url(value) {
   const bytes = new TextEncoder().encode(JSON.stringify(value));
   let binary = "";
@@ -844,7 +967,7 @@ function applySharePayload(payload) {
   });
 
   Object.entries(payload.images || {}).forEach(([key, value]) => {
-    if (PHOTO_KEYS.includes(key) && String(value).startsWith("data:image/")) {
+    if (PHOTO_KEYS.includes(key) && (String(value).startsWith("data:image/") || isRemoteUrl(value))) {
       localStorage.setItem(storageKey(key, "image"), String(value));
     }
   });
@@ -898,15 +1021,30 @@ function loadSharedPage() {
   }
 }
 
-function finishAndShare() {
+async function finishAndShare() {
+  shareNote.textContent = "Preparing share link...";
+
+  try {
+    await uploadStoredMediaForSharing();
+  } catch {
+    shareNote.textContent = "Could not upload media to Supabase. The link will use local data where possible.";
+  }
+
   const song = getSong();
   const payload = collectSharePayload();
   const encoded = toBase64Url(payload);
   const url = `${window.location.origin}${window.location.pathname}#done=${encoded}`;
+  const isLocalPreview = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
   shareLink.value = url;
   openShareLink.href = url;
 
-  if (song.audio && !payload.song.audio) {
+  if (isLocalPreview) {
+    shareNote.textContent =
+      "This is a localhost preview link. Deploy to Vercel and click Done on the Vercel URL before sharing.";
+  } else if (!isSupabaseConfigured() && Object.keys(payload.images).some((key) => isDataUrl(payload.images[key]))) {
+    shareNote.textContent =
+      "Supabase is not configured yet, so image data is inside this long link.";
+  } else if (song.audio && !payload.song.audio) {
     shareNote.textContent =
       "Uploaded audio is too large for a share link. The page will share lyrics and visuals; use YouTube for public audio.";
   } else if (url.length > 1800) {
@@ -962,8 +1100,7 @@ document.addEventListener("click", (event) => {
   if (action === "find-lyrics") findSyncedLyrics();
   if (action === "add-lyric-line") addLyricLine();
   if (action === "use-current-time") {
-    timestampInput.value = String(Math.round(elapsed));
-    timestampOutput.textContent = formatTime(elapsed);
+    syncTimestampToPlayback();
   }
   if (action === "finish") finishAndShare();
   if (action === "copy-link") copyShareLink();

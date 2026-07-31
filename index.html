@@ -281,18 +281,18 @@
         </label>
         <label class="field">
           <span>Duration</span>
-          <input id="songDurationInput" type="range" min="1" max="300" step="1" />
+          <input id="songDurationInput" type="range" min="1" max="900" step="1" />
           <output id="durationOutput">0:29</output>
         </label>
         <div class="timestamp-tools">
           <label class="field">
             <span>Timestamp</span>
-            <input id="timestampInput" type="range" min="0" max="300" step="1" />
+            <input id="timestampInput" type="range" min="0" max="900" step="1" />
             <output id="timestampOutput">0:00</output>
           </label>
           <label class="field">
             <span>Lyric line</span>
-            <input id="lyricLineInput" type="text" maxlength="120" />
+            <input id="lyricLineInput" type="text" maxlength="240" />
           </label>
           <div class="mini-actions">
             <button class="ghost-button" type="button" data-action="use-current-time">Use current time</button>
@@ -301,7 +301,7 @@
         </div>
         <label class="field">
           <span>Lyrics</span>
-          <textarea id="lyricsInput" rows="6" maxlength="420"></textarea>
+          <textarea id="lyricsInput" rows="9" maxlength="5000"></textarea>
         </label>
         <p class="share-note" id="lyricsStatus"></p>
         <div class="dialog-actions">
@@ -351,6 +351,7 @@
       </form>
     </dialog>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
   </body>
 </html>
