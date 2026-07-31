@@ -36,6 +36,7 @@ const YOUTUBE_FRAME_ID = "youtubePlayerFrame";
 const SUPABASE_URL = "https://dalhvmruyivqnhdhtrbl.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_m7CSxrXeLoZOKZyxeMV3OQ_49ue442V";
 const SUPABASE_BUCKET = "girlfriend-pages";
+const SUPABASE_PAGES_TABLE = "greeting_pages";
 
 const intro = document.querySelector("#intro");
 const storySections = [...document.querySelectorAll("[data-section]")];
@@ -93,13 +94,28 @@ let ytPlayerReady = false;
 let pendingYoutubePlay = false;
 let ytApiReadyPromise = null;
 let supabaseClient = null;
+let stateNamespace = `draft:${makeRandomToken(18)}`;
 
 function storageKey(key, field) {
-  return `${STORAGE_PREFIX}${key}:${field}`;
+  return `${STORAGE_PREFIX}${stateNamespace}:${key}:${field}`;
 }
 
 function songStorageKey(field) {
   return storageKey("song", field);
+}
+
+function makeRandomToken(length = 48) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const values = new Uint8Array(length);
+  crypto.getRandomValues(values);
+  return [...values].map((value) => alphabet[value % alphabet.length]).join("");
+}
+
+function clearStateNamespace(namespace = stateNamespace) {
+  const prefix = `${STORAGE_PREFIX}${namespace}:`;
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith(prefix)) localStorage.removeItem(key);
+  });
 }
 
 function isRemoteUrl(value) {
@@ -1004,21 +1020,84 @@ function enterSharedMode() {
   showSection("home");
 }
 
-function loadSharedPage() {
+async function saveFinishedPage(payload) {
+  const client = getSupabaseClient();
+  if (!client) throw new Error("Supabase is not configured.");
+
+  const publicToken = makeRandomToken(40);
+  const viewKey = makeRandomToken(56);
+  const { error } = await client.from(SUPABASE_PAGES_TABLE).insert({
+    public_token: publicToken,
+    view_key: viewKey,
+    payload
+  });
+
+  if (error) throw error;
+
+  return { publicToken, viewKey };
+}
+
+async function loadSupabasePage(publicToken, viewKey) {
+  const client = getSupabaseClient();
+  if (!client || !publicToken || !viewKey) return false;
+
+  const { data, error } = await client
+    .from(SUPABASE_PAGES_TABLE)
+    .select("payload")
+    .eq("public_token", publicToken)
+    .eq("view_key", viewKey)
+    .single();
+
+  if (error || !data?.payload) return false;
+
+  stateNamespace = `page:${publicToken}`;
+  clearStateNamespace();
+  if (!applySharePayload(data.payload)) return false;
+
+  enterSharedMode();
+  renderPhotos();
+  renderPersonName();
+  renderSong();
+  return true;
+}
+
+function loadLegacyHashPage() {
   const hash = window.location.hash || "";
   const match = hash.match(/#done=([^&]+)/);
-  if (!match) return;
+  if (!match) return false;
 
   try {
     const payload = fromBase64Url(match[1]);
+    stateNamespace = `legacy:${makeRandomToken(18)}`;
+    clearStateNamespace();
     if (applySharePayload(payload)) {
       enterSharedMode();
       renderPhotos();
+      renderPersonName();
       renderSong();
+      return true;
     }
   } catch {
     window.location.hash = "";
   }
+
+  return false;
+}
+
+async function loadSharedPage() {
+  const params = new URLSearchParams(window.location.search);
+  const publicToken = params.get("page");
+  const viewKey = params.get("key");
+
+  if (publicToken || viewKey) {
+    const loaded = await loadSupabasePage(publicToken, viewKey);
+    if (!loaded) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+    return loaded;
+  }
+
+  return loadLegacyHashPage();
 }
 
 async function finishAndShare() {
@@ -1032,15 +1111,26 @@ async function finishAndShare() {
 
   const song = getSong();
   const payload = collectSharePayload();
-  const encoded = toBase64Url(payload);
-  const url = `${window.location.origin}${window.location.pathname}#done=${encoded}`;
   const isLocalPreview = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+
+  let url = "";
+  try {
+    const { publicToken, viewKey } = await saveFinishedPage(payload);
+    const params = new URLSearchParams({ page: publicToken, key: viewKey });
+    url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  } catch {
+    const encoded = toBase64Url(payload);
+    url = `${window.location.origin}${window.location.pathname}#done=${encoded}`;
+  }
+
   shareLink.value = url;
   openShareLink.href = url;
 
   if (isLocalPreview) {
     shareNote.textContent =
       "This is a localhost preview link. Deploy to Vercel and click Done on the Vercel URL before sharing.";
+  } else if (url.includes("#done=")) {
+    shareNote.textContent = "Could not save to Supabase, so this fallback link may be long.";
   } else if (!isSupabaseConfigured() && Object.keys(payload.images).some((key) => isDataUrl(payload.images[key]))) {
     shareNote.textContent =
       "Supabase is not configured yet, so image data is inside this long link.";
@@ -1164,8 +1254,16 @@ imageInput.addEventListener("change", async () => {
 intro.addEventListener("click", beginStory);
 window.addEventListener("hashchange", loadSharedPage);
 
-loadSharedPage();
-renderPhotos();
-renderPersonName();
-renderSong();
-primeYouTubePlayer();
+async function initializePage() {
+  const loadedSharedPage = await loadSharedPage();
+
+  if (!loadedSharedPage) {
+    renderPhotos();
+    renderPersonName();
+    renderSong();
+  }
+
+  primeYouTubePlayer();
+}
+
+initializePage();
